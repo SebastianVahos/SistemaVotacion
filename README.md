@@ -66,7 +66,7 @@ git clone https://github.com/SebastianVahos/SistemaVotacion.git
 Entrar al proyecto
 
 ```bash
-cd SistemaVotacionAPI
+cd API-votacion
 ```
 
 ---
@@ -107,7 +107,11 @@ pip install -r requirements.txt
 Crear un archivo **.env** con la siguiente información:
 
 ```env
-DATABASE_URL=postgresql://USUARIO:CONTRASEÑA@localhost:5432/PruebaTecnicaNewInntech
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=NOMBRE DE LA BASE DE DATOS
+DB_USER=USUARIO
+DB_PASSWORD=CONTRASEÑA
 ```
 
 Reemplazar:
@@ -122,11 +126,108 @@ por los valores correspondientes de PostgreSQL.
 
 ## Base de datos
 
-Crear la base de datos en PostgreSQL y ejecutar el script SQL suministrado para crear:
+Crear la base de datos en PostgreSQL y ejecutar el script SQL suministrado:
 
-* Tablas
-* Restricciones
-* Triggers
+```sql
+CREATE DATABASE PruebaTecnicaNewInntech;
+
+--TABLA DEL VOTANTE
+CREATE TABLE Voter(
+	id SERIAL PRIMARY KEY,
+	name VARCHAR(80) NOT NULL,
+	email VARCHAR(50) NOT NULL UNIQUE,
+	has_voted BOOLEAN DEFAULT FALSE
+);
+
+--TABLA DEL CANDIDATO
+CREATE TABLE Candidate (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(80) NOT NULL,
+    party VARCHAR(100),
+    votes INT NOT NULL DEFAULT 0,
+	email VARCHAR(50) NOT NULL UNIQUE
+);
+
+--TABLA DEL VOTO
+CREATE TABLE Vote (
+    id SERIAL PRIMARY KEY,
+	-- Restriccion: Es unique para que cada votante emita un unico voto
+    voter_id INT UNIQUE REFERENCES Voter(id),
+    candidate_id INT REFERENCES Candidate(id)
+);
+
+
+-- RESTRICCIONES
+
+-- Funcion para impedir que un candidato se registre como votante, y tiene un return trigger
+-- ya que se esta diciendo que esta funcion será utilizada por un trigger
+CREATE OR REPLACE FUNCTION validar_candidato()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM Voter
+        WHERE email = NEW.email
+    ) THEN
+        RAISE EXCEPTION 'El correo ya pertenece a un votante, no puede registrarse como candidato.';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+--Trigger para cuando se vaya a insertar o actualizar, antes verifique que no exista para luego crearlo y se activa automaticamente
+CREATE TRIGGER trg_validar_candidato
+BEFORE INSERT OR UPDATE
+ON Candidate
+FOR EACH ROW
+EXECUTE FUNCTION validar_candidato();
+
+-- Funcion para impedir que un votante se registre como candidato, y tiene un return trigger
+-- ya que se esta diciendo que esta funcion será utilizada por un trigger
+CREATE OR REPLACE FUNCTION validar_votante()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM Candidate
+        WHERE email = NEW.email
+    ) THEN
+        RAISE EXCEPTION 'El correo ya pertenece a un candidato, no puede registrarse como votante.';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+--Trigger para cuando se vaya a insertar o actualizar, antes verifique que no exista para luego crearlo y se activa automaticamente
+CREATE TRIGGER trg_validar_votante
+BEFORE INSERT OR UPDATE
+ON Voter
+FOR EACH ROW
+EXECUTE FUNCTION validar_votante();
+
+-- Funcion para que cuando la tabla vote tenga un voto de un candidato, se actualice el campo
+-- votes de la tabla candidate
+CREATE OR REPLACE FUNCTION contar_voto()
+RETURNS TRIGGER AS $$
+BEGIN
+	UPDATE Candidate
+	SET votes = votes + 1
+	WHERE id = NEW.candidate_id;
+	
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger para cuando se haya hecho un insert, y sea valido, el campo de votes de candidate se actualice
+CREATE TRIGGER trg_contar_voto
+AFTER INSERT
+ON Vote
+FOR EACH ROW
+EXECUTE FUNCTION contar_voto();
+
+```
 
 El proyecto utiliza los siguientes triggers:
 
@@ -270,6 +371,9 @@ http://127.0.0.1:8000/docs
     ]
 }
 ```
+## Capturas
+<img width="1915" height="1022" alt="image" src="https://github.com/user-attachments/assets/58c1c513-e00b-4ab7-8b3d-8a3cd0b10d43" />
+<img width="1907" height="1013" alt="image" src="https://github.com/user-attachments/assets/53ea858f-0b12-4786-9604-064c1e9387ff" />
 
 ---
 
