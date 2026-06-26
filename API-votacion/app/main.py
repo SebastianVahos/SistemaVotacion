@@ -1,15 +1,9 @@
 from fastapi import FastAPI
-from sqlalchemy import text
+from app.controllers.voter_controller import router as voter_router
 
-from app.database import engine
+app = FastAPI(
+    title="Sistema de Votación API",
+    version="1.0"
+)
 
-app = FastAPI()
-
-@app.get("/")
-def home():
-    with engine.connect() as connection:
-        result = connection.execute(text("SELECT version();"))
-        version = result.scalar()
-
-    return {"message": "Conexion exitosa",
-    "postgreSQL": version}
+app.include_router(voter_router)
