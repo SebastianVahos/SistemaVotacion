@@ -28,8 +28,8 @@ class VoterRepository:
             .first()
         )
 
-    def get_all(self, db: Session):
-        return db.query(Voter).all()
+    # def get_all(self, db: Session):
+    #     return db.query(Voter).all()
     
     def get_by_id(self, db: Session, voter_id: int):
         return( 
@@ -44,3 +44,29 @@ class VoterRepository:
             db.delete(voter)
             db.commit()
         return voter
+
+
+    # EXTRAS PAGINACION Y FILTRADO
+    def get_all_filter(
+        self,
+        db: Session,
+        name: str = None,
+        skip: int = 0,
+        limit: int = 10
+    ):
+
+        query = db.query(Voter)
+
+        # Filtrar por nombre
+        if name:
+            query = query.filter(
+                Voter.name.ilike(f"%{name}%")
+            )
+
+        # Paginación
+        return (
+            query
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )

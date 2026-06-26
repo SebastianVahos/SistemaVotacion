@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-
+from typing import Optional
 from app.database import get_db
 from app.schemas.voter_schema import VoterCreate, VoterResponse
 from app.services.voter_service import VoterService
@@ -23,14 +23,14 @@ def create_voter(
 ):
     return service.create(db, voter)
 
-@router.get(
-    "",
-    response_model = list[VoterResponse]
-)
-def get_voters(
-    db: Session = Depends(get_db)
-):
-    return service.get_all(db)
+# @router.get(
+#     "",
+#     response_model = list[VoterResponse]
+# )
+# def get_voters(
+#     db: Session = Depends(get_db)
+# ):
+#     return service.get_all(db)
 
 @router.get(
     "/{voter_id}", 
@@ -54,3 +54,35 @@ def delete_voter(
     return {
         "message": "Votante eliminado correctamente."
     }
+
+    # EXTRAS PAGINACION Y FILTRADO
+@router.get(
+    "",
+    response_model=list[VoterResponse]
+)
+def get_voters_filter(
+
+name: Optional[str] = None,
+
+skip: int = Query(
+    default = 0,
+    ge = 0,
+    description = "Cantidad de registros a omitir"
+),
+
+limit: int = Query(
+    default = 10,
+    ge = 1,
+    le = 100,
+    description = "Cantidad máxima de registros"
+),
+
+    db: Session = Depends(get_db)
+
+):
+    return service.get_all_filter(
+        db,
+        name,
+        skip,
+        limit
+    )

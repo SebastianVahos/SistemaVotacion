@@ -26,8 +26,8 @@ class CandidateRepository:
             .first()
         )
     
-    def get_all(self, db: Session):
-        return db.query(Candidate).all()
+    # def get_all(self, db: Session):
+    #     return db.query(Candidate).all()
     
     def get_by_id(self, db: Session, candidate_id: int):
         return (
@@ -42,3 +42,28 @@ class CandidateRepository:
             db.delete(candidate)
             db.commit()
         return candidate
+    
+    # EXTRAS PAGINACION Y FILTRADO
+    def get_all_filter(
+        self,
+        db: Session,
+        name: str = None,
+        skip: int = 0,
+        limit: int = 10
+    ):
+
+        query = db.query(Candidate)
+
+        # Filtrar por nombre
+        if name:
+            query = query.filter(
+                Candidate.name.ilike(f"%{name}%")
+            )
+
+        # Paginación
+        return (
+            query
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )

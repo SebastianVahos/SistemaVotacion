@@ -36,15 +36,15 @@ class CandidateService:
 
         return candidate_repository.create(db, candidate)
 
-    def get_all(self, db: Session):
-        candidates = candidate_repository.get_all(db)
-        if not candidates:
-            raise HTTPException(
-                status_code = 404,
-                detail = "No hay candidatos registrados."
-            )
+    # def get_all(self, db: Session):
+    #     candidates = candidate_repository.get_all(db)
+    #     if not candidates:
+    #         raise HTTPException(
+    #             status_code = 404,
+    #             detail = "No hay candidatos registrados."
+    #         )
 
-        return candidates
+    #     return candidates
 
     def get_by_id(self, db: Session, candidate_id: int):
         candidate = candidate_repository.get_by_id(db, candidate_id)
@@ -67,3 +67,27 @@ class CandidateService:
             )
 
         return candidate_repository.delete(db, candidate_id)
+    
+    #EXTRAS PAGINACION Y FILTRADO SERVICE
+    def get_all_filter(
+        self,
+        db: Session,
+        name: str = None,
+        skip: int = 0,
+        limit: int = 10
+    ):
+
+        candidates = candidate_repository.get_all_filter(
+            db,
+            name,
+            skip,
+            limit
+        )
+
+        if not candidates:
+            raise HTTPException(
+                status_code = 404,
+                detail = "No hay candidatos registrados."
+            )
+
+        return candidates

@@ -36,15 +36,15 @@ class VoterService:
 
         return voter_repository.create(db, voter)
 
-    def get_all(self, db: Session):
-        voter = voter_repository.get_all(db)
-        if not voter:
-            raise HTTPException(
-                status_code = 404,
-                detail = "No hay votantes registrados."
-            )
+    # def get_all(self, db: Session):
+    #     voter = voter_repository.get_all(db)
+    #     if not voter:
+    #         raise HTTPException(
+    #             status_code = 404,
+    #             detail = "No hay votantes registrados."
+    #         )
 
-        return voter
+    #     return voter
 
     def get_by_id(self, db: Session, voter_id: int):
         voter = voter_repository.get_by_id(db, voter_id)
@@ -68,3 +68,27 @@ class VoterService:
             )
         
         return voter_repository.delete(db, voter_id)
+    
+    #EXTRAS PAGINACION Y FILTRADO SERVICE
+    def get_all_filter(
+        self,
+        db: Session,
+        name: str = None,
+        skip: int = 0,
+        limit: int = 10
+    ):
+
+        voters = voter_repository.get_all_filter(
+            db,
+            name,
+            skip,
+            limit
+        )
+
+        if not voters:
+            raise HTTPException(
+                status_code = 404,
+                detail = "No hay votantes registrados."
+            )
+
+        return voters
